@@ -1,6 +1,3 @@
-
-
-
 var app = new Vue({
     el: '#app',
     data: {
@@ -11,16 +8,16 @@ var app = new Vue({
 var app5 = new Vue({
     el: '#app-5',
     data: {
-        message: '' , 
-        price: '' , 
-        mkmURL:'' , 
+        message: '',
+        price: '',
+        mkmURL: '',
         imgSRC: ''
     },
     methods: {
         getPrice: function () {
             var q = this.message;
             getCardPrice(q);
-            
+
         },
         getAllCard: function () {
             var q = this.message;
@@ -39,18 +36,26 @@ function getCardPrice(q) {
         var result = JSON.parse(x.response);
         console.log(result);
         
-        if(result.prices.eur === null){
-            app5.price ='Price trend : '+result.prices.usd+'$';
-        }else{
-            app5.price ='Price trend : '+result.prices.eur+'\u20AC';
+        if (result.status === 400) {
+            ons.notification.alert('Error retriving card info');
+        } else {
+
+            if (result.prices.eur === null) {
+                app5.price = 'Price trend : ' + result.prices.usd + '$';
+            } else {
+                app5.price = 'Price trend : ' + result.prices.eur + '\u20AC';
+            }
+            app5.mkmURL = result.purchase_uris.cardmarket;
+            app5.imgSRC = result.image_uris.border_crop;
         }
-        app5.mkmURL = result.purchase_uris.cardmarket;
-        app5.imgSRC = result.image_uris.border_crop;
+
+
+
     };
     x.send();
 
-  
-     
+
+
 }
 
 function getCardList(q) {
@@ -62,9 +67,9 @@ function getCardList(q) {
     x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     x.onload = function () {
         var result = JSON.parse(x.response);
-        for(var index in result.data){
-             let price = that.getCardPrice(result.data[index]);
-             console.log(price);
+        for (var index in result.data) {
+            let price = that.getCardPrice(result.data[index]);
+            console.log(price);
         }
     };
     x.send();
