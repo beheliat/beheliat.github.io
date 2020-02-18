@@ -11,7 +11,11 @@ var cardSearch = new Vue({
         message: '',
         price: '',
         mkmURL: '',
-        imgSRC: ''
+        imgSRC: '' , 
+        price30Day:'' , 
+        price15Day :'' , 
+        price1Day : '', 
+        priceFrom : ''
     },
     methods: {
         getCardInfo: function () {
@@ -45,6 +49,7 @@ function getInfo(q) {
                 ons.notification.alert('Error retriving card info');
             } else {
                 that.getPrice(result.name);
+                that-getAllTrend(result.purchase_uris.cardmarket);
                 cardSearch.mkmURL = result.purchase_uris.cardmarket;
                 cardSearch.imgSRC = result.image_uris.border_crop;
             }
@@ -56,7 +61,6 @@ function getInfo(q) {
 
 
 function getPrice(q) {
-
     var api = 'https://api.scryfall.com/cards/named?fuzzy=' + q;
     var x = new XMLHttpRequest();
     x.open('GET', api);
@@ -66,15 +70,7 @@ function getPrice(q) {
         cardSearch.price = 'Price trend : ' + result.prices.eur + '\u20AC';
     };
     x.send();
-
-
 }
-
-
-
-
-
-
 
 
 function getCardList(q) {
@@ -92,4 +88,36 @@ function getCardList(q) {
         }
     };
     x.send();
+}
+
+
+function getAllTrend(qURL){
+
+    
+    var proxyURL = 'https://cors-anywhere.herokuapp.com/';
+
+
+    var api = proxyURL + qURL;
+    var x = new XMLHttpRequest();
+    x.open('GET', api);
+    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    x.onload = function () {
+        console.log(x);
+        var texts = $(x.response).find(".col-6.col-xl-5");
+        var prices = $(x.response).find(".col-6.col-xl-7");
+        console.log(texts);
+
+        var price30Day = texts[7].innerText + " "+ prices[7].innerText;
+        var price15Day = texts[8].innerText + " "+ prices[8].innerText;
+        var price1Day = texts[9].innerText + " "+ prices[9].innerText;
+        var priceFrom = texts[5].innerText + " "+ prices[5].innerText;
+        
+        cardSearch.price30Day = price30Day;
+        cardSearch.price15Day  = price15Day;
+        cardSearch.price1Day  = price1Day;
+        cardSearch.priceFrom  = priceFrom;
+
+    };
+    x.send();
+
 }
