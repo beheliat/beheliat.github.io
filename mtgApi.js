@@ -14,9 +14,9 @@ var app5 = new Vue({
         imgSRC: ''
     },
     methods: {
-        getPrice: function () {
+        getCardInfo: function () {
             var q = this.message;
-            getCardPrice(q);
+            getInfo(q);
 
         },
         getAllCard: function () {
@@ -27,7 +27,8 @@ var app5 = new Vue({
 });
 
 
-function getCardPrice(q) {
+function getInfo(q) {
+    var that = this;
     var api = 'https://api.scryfall.com/cards/named?fuzzy=' + q;
     var x = new XMLHttpRequest();
     x.open('GET', api);
@@ -35,28 +36,46 @@ function getCardPrice(q) {
     x.onload = function () {
         var result = JSON.parse(x.response);
         console.log(result);
-        
-        if (result.status === 400) {
-            ons.notification.alert('Error retriving card info');
+
+        if (result.status === 404) {
+            ons.notification.alert('Too many result');
         } else {
 
-            if (result.prices.eur === null) {
-                app5.price = 'Price trend : ' + result.prices.usd + '$';
+            if (result.status === 400) {
+                ons.notification.alert('Error retriving card info');
             } else {
-                app5.price = 'Price trend : ' + result.prices.eur + '\u20AC';
+                that.getPrice(result.name);
+                app5.mkmURL = result.purchase_uris.cardmarket;
+                app5.imgSRC = result.image_uris.border_crop;
             }
-            app5.mkmURL = result.purchase_uris.cardmarket;
-            app5.imgSRC = result.image_uris.border_crop;
         }
+    };
+    x.send();
+}
 
 
 
+function getPrice(q) {
+
+    var api = 'https://api.scryfall.com/cards/named?fuzzy=' + q;
+    var x = new XMLHttpRequest();
+    x.open('GET', api);
+    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    x.onload = function () {
+        var result = JSON.parse(x.response);
+        app5.price = 'Price trend : ' + result.prices.eur + '\u20AC';
     };
     x.send();
 
 
-
 }
+
+
+
+
+
+
+
 
 function getCardList(q) {
     var that = this;
