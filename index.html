@@ -8,35 +8,36 @@
     <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
     <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
     <link rel="icon" href="mtgIcon.png">
+    <link rel ="stylesheet" href="style.css">
 </head>
 
 <body style="overflow-y: auto">
     <!--
     <ons-button onclick="ons.notification.alert('Hello World!')">Click Me</ons-button>  -->
 
-    <div id="app" style="text-align: center;">
+    <div id="app">
         <img src="logo.png" width="200px"/>
     </div>
 
 
-    <div id="app-5" style="text-align: center;">
+    <div id="cardSearch" style="text-align: center;">
 
-        <input v-model="message">
-        <ons-button v-on:click="getCardInfo">Seach Card</ons-button>
-        <img v-bind:src="imgSRC" style="width: 60%; display: block; margin: auto; margin-top: 10px;" />
+        <input id ="input" v-model="message" >
+        <ons-button id="ons-btn" v-on:click="getCardInfo">Seach Card</ons-button>
+        <img id="img" v-bind:src="imgSRC"/>
 
         <p>{{price}}</p>
-        <a v-bind:href="mkmURL">
+        <a id="url" v-bind:href="mkmURL">
             {{ mkmURL }}
         </a>
 
     </div>
 
-    <!--
+   <!--
   <div id="components-demo">
     <button-counter></button-counter>
-  </div>
-  -->
+  </div>--> 
+  
     </script>
 
     <script type="text/javascript" src="mtgApi.js"></script>

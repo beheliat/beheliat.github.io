@@ -5,8 +5,8 @@ var app = new Vue({
     }
 });
 
-var app5 = new Vue({
-    el: '#app-5',
+var cardSearch = new Vue({
+    el: '#cardSearch',
     data: {
         message: '',
         price: '',
@@ -45,8 +45,8 @@ function getInfo(q) {
                 ons.notification.alert('Error retriving card info');
             } else {
                 that.getPrice(result.name);
-                app5.mkmURL = result.purchase_uris.cardmarket;
-                app5.imgSRC = result.image_uris.border_crop;
+                cardSearch.mkmURL = result.purchase_uris.cardmarket;
+                cardSearch.imgSRC = result.image_uris.border_crop;
             }
         }
     };
@@ -63,7 +63,7 @@ function getPrice(q) {
     x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     x.onload = function () {
         var result = JSON.parse(x.response);
-        app5.price = 'Price trend : ' + result.prices.eur + '\u20AC';
+        cardSearch.price = 'Price trend : ' + result.prices.eur + '\u20AC';
     };
     x.send();
 
