@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MTG Price Checker</title>
+    <script src="https://unpkg.com/vue"></script>
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+</head>
+
+<body>
+    <!--
+    <ons-button onclick="ons.notification.alert('Hello World!')">Click Me</ons-button>  -->
+
+    <div id="app" style="text-align: center;">
+        <img src="logo.png" width="200px"/>
+    </div>
+
+
+    <div id="app-5" style="text-align: center;">
+
+        <!--<button v-on:click="getPrice">Get Price</button>-->
+
+        <input v-model="message">
+        <ons-button v-on:click="getPrice">Get Price</ons-button>
+        <img v-bind:src="imgSRC" style="width: 60%; display: block; margin: auto; margin-top: 10px;" />
+
+        <p>{{price}}</p>
+        <a v-bind:href="''">
+            {{ mkmURL }}
+        </a>
+
+    </div>
+
+    <!--
+  <div id="components-demo">
+    <button-counter></button-counter>
+  </div>
+  -->
+    </script>
+
+    <script type="text/javascript" src="mtgApi.js"></script>
+    <script type="text/javascript" src="vueInterface.js"></script>
+</body>
+
+</html>
