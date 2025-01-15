@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rhino</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2b2b2b;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    #card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 50px;
+      padding: 20px;
+      margin-top: 20px;
+      min-height: 300px;
+    }
+
+    .card {
+      width: 160px;
+      height: 230px;
+      background-color: #333;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #444;
+      border-radius: 8px;
+      position: relative;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      padding: 10px;
+      color: white;
+    }
+
+    .card.removing {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+
+    .pixel-art {
+      width: 160px;
+      height: 220px;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .remove-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: red;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+      .rotate-button {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background-color: blue;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .counter {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+
+    #search-bar {
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+      width: 200px;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #555;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #777;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    #create-card,
+    #upkeep-all {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rhino Helper</h1>
+
+  <div class="search-container">
+    <input type="text" id="search-bar" list="token-suggestions" placeholder="Enter Card">
+    <datalist id="token-suggestions">
+      <option value="Crashing">
+      <option value="Rhino">
+    </datalist>
+  </div>
+  <button id="create-card">Create Cards</button>
+  <button id="upkeep-all">Upkeep All</button>
+  <div id="card-container"></div>
+
+  <script>
+    const container = document.getElementById('card-container');
+    const searchBar = document.getElementById('search-bar');
+    const createButton = document.getElementById('create-card');
+    const upkeepButton = document.getElementById('upkeep-all');
+
+    const imageMap = {
+      Crashing: './images/crashingFootfalls.png',
+      Rhino: './images/rhino.png'
+    };
+
+    function createCard(imageUrl, type, counters = 0) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const pixelArt = document.createElement('div');
+      pixelArt.className = 'pixel-art';
+      pixelArt.style.backgroundImage = `url('${imageUrl}')`;
+
+      const removeButton = document.createElement('button');
+      removeButton.className = 'remove-button';
+      removeButton.textContent = '×';
+      removeButton.addEventListener('click', () => {
+        card.classList.add('removing');
+        setTimeout(() => {
+          card.remove();
+        }, 500);
+      });
+
+      const counterDisplay = document.createElement('div');
+      counterDisplay.className = 'counter';
+
+      if (type === 'Crashing') {
+        counterDisplay.textContent = `Sospensione: ${counters}`;
+        card.dataset.counter = counters; // Save the counter in the dataset
+        card.dataset.type = 'Crashing';
+      } else if (type === 'Rhino') {
+      // Aggiungi pulsante "Rotate" solo per le carte Rhino
+      const rotateButton = document.createElement('button');
+      rotateButton.className = 'rotate-button';
+      rotateButton.textContent = '↻';
+      rotateButton.addEventListener('click', () => {
+        card.style.transform = card.style.transform === 'rotate(90deg)' ? '' : 'rotate(90deg)';
+      });
+
+
+       card.appendChild(rotateButton);
+    }
+
+      card.appendChild(pixelArt);
+      card.appendChild(removeButton);
+      card.appendChild(counterDisplay);
+      container.appendChild(card);
+    } 
+
+
+
+    createButton.addEventListener('click', () => {
+      const type = searchBar.value.trim();
+
+      if (type === 'Crashing') {
+        createCard(imageMap.Crashing, 'Crashing', 4); // Create CrashingFootfalls with 4 counters
+      } else if (type === 'Rhino') {
+        createCard(imageMap.Rhino, 'Rhino'); // Create Rhino without counters
+        createCard(imageMap.Rhino, 'Rhino'); // Create Rhino without counters
+      } else {
+        alert('Invalid input! Please enter "Crashing" or "Rhino".');
+      }
+    });
+
+    upkeepButton.addEventListener('click', () => {
+      const cards = container.querySelectorAll('.card[data-type="Crashing"]');
+      cards.forEach(card => {
+        let counter = parseInt(card.dataset.counter, 10);
+        if (counter > 0) {
+          counter--;
+          card.dataset.counter = counter;
+          const counterDisplay = card.querySelector('.counter');
+          counterDisplay.textContent = `Sospensione: ${counter}`;
+
+          if (counter === 0) {
+            card.remove();
+            createCard(imageMap.Rhino, 'Rhino');
+            createCard(imageMap.Rhino, 'Rhino');
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

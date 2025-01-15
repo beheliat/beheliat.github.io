@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Card Price Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2b2b2b;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    input, button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #444;
+      border-radius: 8px;
+    }
+
+    #prices {
+      margin-top: 20px;
+    }
+
+    .price-entry {
+      margin-bottom: 15px;
+      padding: 8px;
+      background-color: #333;
+      border-radius: 5px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px; /* Space between elements */
+    }
+
+    .price-entry span {
+      display: inline-block;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    /* Classe per il testo Foil con animazione RGB a onda */
+    .foil {
+      font-weight: bold;
+      animation: foilWave 2s infinite;
+    }
+
+    /* Animazione RGB a onda */
+    @keyframes foilWave {
+      0% {
+        color: rgb(255, 0, 0); /* Rosso */
+      }
+      20% {
+        color: rgb(255, 165, 0); /* Arancione */
+      }
+      40% {
+        color: rgb(255, 255, 0); /* Giallo */
+      }
+      60% {
+        color: rgb(0, 255, 0); /* Verde */
+      }
+      80% {
+        color: rgb(0, 0, 255); /* Blu */
+      }
+      100% {
+        color: rgb(255, 0, 255); /* Magenta */
+      }
+    }
+
+    .non-foil {
+      color: rgb(0, 255, 0); /* Verde per non-foil */
+      font-weight: bold;
+    }
+
+    .zero {
+      font-style: italic;
+    }
+
+    .zero-one-day {
+      font-style: italic;
+    }
+
+    /* Classe per rendere il testo in grassetto */
+    .bold {
+      font-weight: bold;
+      color: rgb(0, 255, 0) !!important;
+    }
+  </style>
+</head>
+<body>
+  <h1>MTG Card Price Finder</h1>
+  <div>
+    <label for="cardName">Card Name:</label>
+    <input type="text" id="cardName" placeholder="Enter card name">
+    <label for="expansionCode">Expansion Code:</label>
+    <input type="text" id="expansionCode" placeholder="Enter expansion code">
+    <label for="collectorNumber">Collector Number (optional):</label>
+    <input type="text" id="collectorNumber" placeholder="Enter collector number (optional)">
+    <button id="findPrice">Find Price</button>
+  </div>
+  <div id="prices">
+    <!-- Prezzi Scryfall -->
+  </div>
+  <div id="result">
+    <!-- Risultati -->
+  </div>
+
+  <script>
+    document.getElementById('findPrice').addEventListener('click', async () => {
+      const cardName = document.getElementById('cardName').value.trim();
+      const expansionCode = document.getElementById('expansionCode').value.trim();
+      const collectorNumber = document.getElementById('collectorNumber').value.trim();
+      const authToken = 'eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJjYXJkdHJhZGVyLXByb2R1Y3Rpb24iLCJzdWIiOiJhcHA6MTkzOSIsImF1ZCI6ImFwcDoxOTM5IiwiZXhwIjo0ODkyNjA4Nzk2LCJqdGkiOiJjZGJlYmFlMy01NzFkLTRjM2EtOTQxNi02NDFhY2Q1N2E4MDciLCJpYXQiOjE3MzY5MzUxOTYsIm5hbWUiOiJBbnR1ciBBcHAgMjAyMDA4MDExMTQ2MjIifQ.XkJkVjyboDtUJJLiWwE4e0fbQ45rFuxkEpMpEmzqbJAqM1i5jnzVIPcqPPD1OXjgx3yzygEOnn6aas8UpTBRIA7mobbvy4qGNYrwabWLRZsF5PzXf54CDu18xLFPUJZb9YHW7m7NTK5RmE70OzOgv66fRBdr5wDgQG8gGQX31OwIpYLxLrAV9nky8CGA0CIq67ZkL0PIU_vlSr7n4t0ybSmBsuztlrv-BWK4QzGR1KsEDpPdvECD9_4oqJfynZ6XkXv2CDSX1CVwgY3jQNvQC59lRS6kxcSDwA5xgzjTQE19tJNoVc30EJrj_TZWsktJJ69kZhcD778kPukr4zk6ag'; // Sostituisci con il tuo token
+
+      if (!cardName || !expansionCode) {
+        alert("Please enter both the card name and expansion code.");
+        return;
+      }
+
+      try {
+        // Step 1: Recupera l'ID Scryfall con nome e espansione
+        let scryfallData;
+        try {
+          const scryfallResponse = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&set=${encodeURIComponent(expansionCode)}&lang=en`);
+          if (scryfallResponse.ok) {
+            scryfallData = await scryfallResponse.json();
+          }
+        } catch (error) {
+          console.error("Error during Scryfall search:", error);
+        }
+
+        if (!scryfallData && collectorNumber) {
+          const scryfallResponse = await fetch(`https://api.scryfall.com/cards/${encodeURIComponent(expansionCode)}/${encodeURIComponent(collectorNumber)}`);
+          if (scryfallResponse.ok) {
+            scryfallData = await scryfallResponse.json();
+          }
+        }
+
+        const scryfallId = scryfallData.id; // Identificatore della carta
+
+        // Step 2: Recupera l'ID dell'espansione
+        const expansionsResponse = await fetch('https://api.cardtrader.com/api/v2/expansions', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!expansionsResponse.ok) throw new Error("Failed to fetch expansions.");
+        const expansionsData = await expansionsResponse.json();
+        const expansion = expansionsData.find(exp => exp.code.toLowerCase() === expansionCode.toLowerCase());
+        if (!expansion) throw new Error("Expansion code not found.");
+        const expansionId = expansion.id;
+
+        // Step 3: Recupera i blueprint con l'ID dell'espansione
+        const blueprintsResponse = await fetch(`https://api.cardtrader.com/api/v2/blueprints/export?expansion_id=${expansionId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!blueprintsResponse.ok) throw new Error("Failed to fetch blueprints.");
+        const blueprintsData = await blueprintsResponse.json();
+        const blueprint = blueprintsData.find(bp => bp.scryfall_id === scryfallId);
+        if (!blueprint) throw new Error("Blueprint not found.");
+        const blueprintId = blueprint.id;
+
+        // Step 4: Recupera il prezzo con il blueprint_id
+        const marketplaceResponse = await fetch(`https://api.cardtrader.com/api/v2/marketplace/products?blueprint_id=${blueprintId}`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        if (!marketplaceResponse.ok) throw new Error("Failed to fetch marketplace data.");
+        const marketplaceData = await marketplaceResponse.json();
+
+        // Step 5: Mostra i risultati
+        const resultDiv = document.getElementById('result');
+        const formattedPrices = Object.values(marketplaceData).flatMap(items =>
+          items.map(item => {
+            const price = item.price?.formatted || 'False';
+            const condition = item.properties_hash?.condition || 'False';
+            const isFoil = item.properties_hash?.mtg_foil ? 'Foil' : 'Non-Foil';
+            const language = item.properties_hash?.mtg_language || 'False';
+            const zero = item.user?.can_sell_via_hub || 'False';
+            const zeroOne = item.user?.can_sell_sealed_with_ct_zero || 'False';
+
+            // Colore dinamico per Foil e Non-Foil
+            const foilClass = isFoil === 'Foil' ? 'foil' : 'non-foil';
+
+            // Applicare il grassetto se Zero o ZeroOneDay sono True
+            let zeroClass = ''; // Usa 'let' per permettere la modifica
+            let zeroOneClass = ''; // Usa 'let' per permettere la modifica
+            
+            if (zero == 'False') {
+              zeroClass = '';  // Riassegna il valore
+            } else {
+              zeroClass = 'bold';
+            }
+
+            if (zeroOne == 'False') {
+              zeroOneClass = ''; // Riassegna il valore
+            } else {
+              zeroOneClass = 'bold';
+            }
+
+            return `<div class="price-entry">
+                      <span>${price}</span>
+                      <span>Condition: ${condition}</span>
+                      <span class="${foilClass}">${isFoil}</span>
+                      <span>Language: ${language}</span>
+                      <span class="zero ${zeroClass}">Zero: ${zero}</span>
+                      <span class="zero-one-day ${zeroOneClass}">ZeroOneDay: ${zeroOne}</span>
+                    </div>`;
+                      })
+                    );
+
+        if (formattedPrices.length > 0) {
+          resultDiv.innerHTML = `
+            <h2>Prices from CardTrader for ${cardName} (${expansionCode}):</h2>
+            ${formattedPrices.join('')}
+          `;
+        } else {
+          resultDiv.innerHTML = `<p>No prices found for ${cardName} in ${expansionCode} on CardTrader.</p>`;
+        }
+
+        // Step 6: Mostra i prezzi da Scryfall
+        const scryfallPricesDiv = document.getElementById('prices');
+        if (scryfallData.prices) {
+          const scryfallPrices = scryfallData.prices;
+          scryfallPricesDiv.innerHTML = `
+            <h2>Prices from Scryfall for ${cardName}:</h2>
+            <ul>
+              ${scryfallPrices.usd ? `<li>USD: ${scryfallPrices.usd}</li>` : ''}
+              ${scryfallPrices.usd_foil ? `<li>Foil USD: ${scryfallPrices.usd_foil}</li>` : ''}
+              ${scryfallPrices.eur ? `<li>EUR: ${scryfallPrices.eur}</li>` : ''}
+              ${scryfallPrices.tix ? `<li>Tix: ${scryfallPrices.tix}</li>` : ''}
+            </ul>
+          `;
+        } else {
+          scryfallPricesDiv.innerHTML = `<p>No prices available from Scryfall for ${cardName}.</p>`;
+        }
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById('result').innerHTML = `<p>Error: ${error.message}</p>`;
+        document.getElementById('prices').innerHTML = `<p>Error: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

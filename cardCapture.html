@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Card Scanner with OCR</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #2b2b2b;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    video, canvas {
+      margin: 10px 0;
+      max-width: 100%;
+    }
+
+    button {
+      margin: 10px 0;
+      padding: 10px 15px;
+      font-size: 16px;
+    }
+
+    canvas#roiPreview {
+      border: 1px solid white;
+    }
+
+    .slider-container {
+      margin-top: 10px;
+    }
+
+    .slider-container label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .slider-container input {
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>MTG Card Scanner with OpenCV.js</h1>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <canvas id="roiPreview"></canvas>
+  <button id="capture">Capture Image</button>
+  <p id="ocrResult">OCR Results:</p>
+  <ul>
+    <li>Name: <span id="cardName"></span></li>
+    <li>Set: <span id="cardSet"></span></li>
+    <li>Collector Number: <span id="collectorNumber"></span></li>
+  </ul>
+
+  <!-- Sliders for ROI customization -->
+  <div class="slider-container">
+    <label for="nameX">Name ROI X Position</label>
+    <input type="range" id="nameX" min="0" max="1" step="0.01" value="0.1">
+    <label for="nameY">Name ROI Y Position</label>
+    <input type="range" id="nameY" min="0" max="1" step="0.01" value="0.1">
+    <label for="nameWidth">Name ROI Width</label>
+    <input type="range" id="nameWidth" min="0" max="1" step="0.01" value="0.3">
+    <label for="nameHeight">Name ROI Height</label>
+    <input type="range" id="nameHeight" min="0" max="1" step="0.01" value="0.05">
+  </div>
+
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const roiPreview = document.getElementById('roiPreview');
+    const captureButton = document.getElementById('capture');
+    const cardNameSpan = document.getElementById('cardName');
+
+    // ROI configuration
+    const roiConfig = {
+      name: { x: 0.1, y: 0.1, width: 0.3, height: 0.05 },
+    };
+
+    // Slider elements
+    const sliders = {
+      nameX: document.getElementById('nameX'),
+      nameY: document.getElementById('nameY'),
+      nameWidth: document.getElementById('nameWidth'),
+      nameHeight: document.getElementById('nameHeight'),
+    };
+
+    // Update ROI configuration based on slider values
+    function updateROIConfig() {
+      roiConfig.name.x = parseFloat(sliders.nameX.value);
+      roiConfig.name.y = parseFloat(sliders.nameY.value);
+      roiConfig.name.width = parseFloat(sliders.nameWidth.value);
+      roiConfig.name.height = parseFloat(sliders.nameHeight.value);
+    }
+
+    // Access the user's camera
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.addEventListener('play', drawROIPreview);
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        alert('Could not access the camera. Please check permissions.');
+      }
+    }
+
+    // Draw ROI preview on live video
+    function drawROIPreview() {
+      const previewContext = roiPreview.getContext('2d');
+      roiPreview.width = video.videoWidth;
+      roiPreview.height = video.videoHeight;
+
+      function draw() {
+        // Draw the video frame on the preview canvas
+        previewContext.drawImage(video, 0, 0, roiPreview.width, roiPreview.height);
+
+        // Clear previous drawings
+        previewContext.clearRect(0, 0, roiPreview.width, roiPreview.height);
+
+        // Define ROI positions and draw rectangles
+        previewContext.strokeStyle = 'lime';
+        previewContext.lineWidth = 2;
+
+        // Draw Name ROI
+        previewContext.strokeRect(
+          roiPreview.width * roiConfig.name.x,
+          roiPreview.height * roiConfig.name.y,
+          roiPreview.width * roiConfig.name.width,
+          roiPreview.height * roiConfig.name.height
+        );
+
+        // Draw text label for Name ROI
+        previewContext.fillStyle = 'lime';
+        previewContext.font = '16px Arial';
+        previewContext.fillText(
+          'Name',
+          roiPreview.width * roiConfig.name.x,
+          roiPreview.height * roiConfig.name.y - 5
+        );
+
+        // Continue drawing the preview every frame
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Add event listeners to sliders
+    Object.values(sliders).forEach(slider => {
+      slider.addEventListener('input', () => {
+        updateROIConfig();
+      });
+    });
+
+    // Capture and process the image when button is clicked
+    captureButton.addEventListener('click', () => {
+      // Get the video frame from the camera
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw the video frame on the canvas
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Extract the region of interest (ROI) for the Name
+      const roiNameX = roiConfig.name.x * canvas.width;
+      const roiNameY = roiConfig.name.y * canvas.height;
+      const roiNameWidth = roiConfig.name.width * canvas.width;
+      const roiNameHeight = roiConfig.name.height * canvas.height;
+
+      // Get the image data for the name ROI
+      const roiImageData = context.getImageData(roiNameX, roiNameY, roiNameWidth, roiNameHeight);
+
+      // Create a temporary canvas to store the extracted image
+      const roiCanvas = document.createElement('canvas');
+      roiCanvas.width = roiNameWidth;
+      roiCanvas.height = roiNameHeight;
+      const roiContext = roiCanvas.getContext('2d');
+      roiContext.putImageData(roiImageData, 0, 0);
+
+      // Convert the extracted image to a data URL (Base64)
+      const roiDataUrl = roiCanvas.toDataURL();
+
+      // Use Tesseract to recognize text in the extracted ROI
+      Tesseract.recognize(
+        roiDataUrl,
+        'eng',
+        {
+          logger: (m) => console.log(m), // Optional logging
+        }
+      ).then(({ data: { text } }) => {
+        // Show the OCR result in the cardName span
+        cardNameSpan.textContent = text.trim();
+      });
+    });
+
+    // Start the camera on page load
+    startCamera();
+  </script>
+</body>
+</html>
