@@ -89,25 +89,25 @@
 </head>
 <body>
     <div class="container">
-        <div class="section" onmousedown="startHold(0, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
-            <div class="half"></div>
+        <div class="section" id="section0">
+            <div class="half">-</div>
             <div id="counter0">0</div>
-            <div class="half"></div>
+            <div class="half">+</div>
         </div>
-        <div class="section" onmousedown="startHold(1, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
-            <div class="half"></div>
+        <div class="section" id="section1">
+            <div class="half">-</div>
             <div id="counter1">0</div>
-            <div class="half"></div>
+            <div class="half">+</div>
         </div>
-        <div class="section" onmousedown="startHold(2, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
-            <div class="half"></div>
+        <div class="section" id="section2">
+            <div class="half">-</div>
             <div id="counter2">0</div>
-            <div class="half"></div>
+            <div class="half">+</div>
         </div>
-        <div class="section" onmousedown="startHold(3, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
-            <div class="half"></div>
+        <div class="section" id="section3">
+            <div class="half">-</div>
             <div id="counter3">0</div>
-            <div class="half"></div>
+            <div class="half">+</div>
         </div>
         <button class="options-button" onclick="openOptions()">⚙️</button>
     </div>
@@ -122,7 +122,8 @@
     <script>
         let counters = [0, 0, 0, 0];
         let holdInterval;
-        
+        let currentSection = -1;  // Teniamo traccia della sezione attualmente tenuta premuta
+
         // Funzione per generare un colore casuale in formato esadecimale
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
@@ -132,7 +133,7 @@
             }
             return color;
         }
-        
+
         // Funzione per assegnare un colore casuale a ciascuna sezione
         function setRandomSectionColors() {
             const sections = document.querySelectorAll('.section');
@@ -140,21 +141,31 @@
                 section.style.backgroundColor = getRandomColor();
             });
         }
-        
+
+        // Funzione di inizio "tenere premuto" per incrementare o decrementare
         function startHold(index, event) {
-            updateCounter(index, event);
-            holdInterval = setInterval(() => updateCounter(index, event), 200);
+            currentSection = index;
+            updateCounter(index, event); // Aggiorna immediatamente il contatore
+
+            // Imposta un intervallo per aumentare o diminuire quando si tiene premuto
+            holdInterval = setInterval(() => updateCounter(index, event), 100); // Aumento della velocità di incremento
         }
-        
+
+        // Funzione per fermare l'azione quando si rilascia il tasto
         function stopHold() {
             clearInterval(holdInterval);
+            currentSection = -1; // Resetta la sezione attualmente tenuta premuta
         }
-        
+
+        // Funzione per aggiornare il contatore
         function updateCounter(index, event) {
+            if (currentSection === -1) return; // Se non c'è nessuna sezione in corso, non fare nulla
+
             const section = event.currentTarget;
             const rect = section.getBoundingClientRect();
-            const clickX = event.clientX;
-            
+            const clickX = event.clientX || event.touches[0].clientX;  // Compatibilità touch
+
+            // Incrementa o decrementa in base alla posizione del click/tocco
             if (clickX < rect.left + rect.width / 2) {
                 counters[index]--;
             } else {
@@ -162,15 +173,16 @@
             }
             document.getElementById(`counter${index}`).innerText = counters[index];
         }
-        
+
+        // Funzioni per gestire le opzioni
         function openOptions() {
             document.getElementById("popup").style.display = "block";
         }
-        
+
         function closeOptions() {
             document.getElementById("popup").style.display = "none";
         }
-        
+
         function setCounters() {
             let newValue = parseInt(document.getElementById("setNumber").value);
             if (!isNaN(newValue)) {
@@ -183,6 +195,19 @@
 
         // Impostiamo i colori casuali al caricamento della pagina
         window.onload = setRandomSectionColors;
+
+        // Aggiungi gli eventi per ogni sezione
+        const sections = document.querySelectorAll('.section');
+        sections.forEach((section, index) => {
+            section.addEventListener('mousedown', (e) => startHold(index, e));
+            section.addEventListener('mouseup', stopHold);
+            section.addEventListener('mouseleave', stopHold);
+
+            // Eventi touch per dispositivi touchscreen
+            section.addEventListener('touchstart', (e) => startHold(index, e));
+            section.addEventListener('touchend', stopHold);
+            section.addEventListener('touchmove', (e) => updateCounter(index, e));
+        });
     </script>
 </body>
 </html>
