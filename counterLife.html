@@ -123,6 +123,8 @@
         let counters = [0, 0, 0, 0];
         let holdInterval;
         let currentSection = -1;  // Teniamo traccia della sezione attualmente tenuta premuta
+        let currentInterval = 1000; // Iniziamo con un intervallo di 1 secondo
+        const minInterval = 400; // Intervallo minimo di 0,4 secondi
 
         // Funzione per generare un colore casuale in formato esadecimale
         function getRandomColor() {
@@ -148,13 +150,21 @@
             updateCounter(index, event); // Aggiorna immediatamente il contatore
 
             // Imposta un intervallo per aumentare o diminuire quando si tiene premuto
-            holdInterval = setInterval(() => updateCounter(index, event), 100); // Aumento della velocità di incremento
+            holdInterval = setInterval(() => {
+                updateCounter(index, event);
+                
+                // Ridurre l'intervallo fino al minimo
+                if (currentInterval > minInterval) {
+                    currentInterval -= 50; // Ridurre di 50ms ogni volta
+                }
+            }, currentInterval);
         }
 
         // Funzione per fermare l'azione quando si rilascia il tasto
         function stopHold() {
             clearInterval(holdInterval);
             currentSection = -1; // Resetta la sezione attualmente tenuta premuta
+            currentInterval = 1000; // Reset dell'intervallo a 1 secondo
         }
 
         // Funzione per aggiornare il contatore
