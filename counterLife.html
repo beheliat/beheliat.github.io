@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contatori</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 5px;
+            position: relative;
+        }
+        .section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            font-size: 36px;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .half {
+            width: 50%;
+            padding: 20px;
+        }
+        .options-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+        }
+        .popup button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .popup input {
+            display: block;
+            margin-top: 10px;
+            padding: 5px;
+            font-size: 16px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section" onmousedown="startHold(0, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
+            <div class="half">-</div>
+            <div id="counter0">0</div>
+            <div class="half">+</div>
+        </div>
+        <div class="section" onmousedown="startHold(1, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
+            <div class="half">-</div>
+            <div id="counter1">0</div>
+            <div class="half">+</div>
+        </div>
+        <div class="section" onmousedown="startHold(2, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
+            <div class="half">-</div>
+            <div id="counter2">0</div>
+            <div class="half">+</div>
+        </div>
+        <div class="section" onmousedown="startHold(3, event)" onmouseup="stopHold()" onmouseleave="stopHold()">
+            <div class="half">-</div>
+            <div id="counter3">0</div>
+            <div class="half">+</div>
+        </div>
+        <button class="options-button" onclick="openOptions()">⚙️</button>
+    </div>
+    
+    <div id="popup" class="popup">
+        <p>Opzioni disponibili</p>
+        <input type="number" id="setNumber" placeholder="Inserisci un numero">
+        <button onclick="setCounters()">Imposta</button>
+        <button onclick="closeOptions()">Chiudi</button>
+    </div>
+    
+    <script>
+        let counters = [0, 0, 0, 0];
+        let holdInterval;
+        
+        function startHold(index, event) {
+            updateCounter(index, event);
+            holdInterval = setInterval(() => updateCounter(index, event), 200);
+        }
+        
+        function stopHold() {
+            clearInterval(holdInterval);
+        }
+        
+        function updateCounter(index, event) {
+            const section = event.currentTarget;
+            const rect = section.getBoundingClientRect();
+            const clickX = event.clientX;
+            
+            if (clickX < rect.left + rect.width / 2) {
+                counters[index]--;
+            } else {
+                counters[index]++;
+            }
+            document.getElementById(`counter${index}`).innerText = counters[index];
+        }
+        
+        function openOptions() {
+            document.getElementById("popup").style.display = "block";
+        }
+        
+        function closeOptions() {
+            document.getElementById("popup").style.display = "none";
+        }
+        
+        function setCounters() {
+            let newValue = parseInt(document.getElementById("setNumber").value);
+            if (!isNaN(newValue)) {
+                for (let i = 0; i < counters.length; i++) {
+                    counters[i] = newValue;
+                    document.getElementById(`counter${i}`).innerText = counters[i];
+                }
+            }
+        }
+    </script>
+</body>
+</html>
