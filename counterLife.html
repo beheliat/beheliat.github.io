@@ -35,7 +35,7 @@
             user-select: none;
             position: relative;
             transition: background-color 0.3s ease, background-image 0.5s ease;
-            background-color: #f4f4f4;  /* Colore di sfondo di fallback */
+            background-color: black !important; /* Colore di sfondo di fallback */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -101,6 +101,16 @@
             font-size: 16px;
             width: 100%;
         }
+        .ko-message {
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +123,7 @@
         <div class="half">
             <div></div>
         </div>
+        <div id="ko-message0" class="ko-message">KO 💀</div>
     </div>
     <div class="section" id="section1">
         <div class="half">
@@ -122,6 +133,7 @@
         <div class="half">
             <div></div>
         </div>
+        <div id="ko-message1" class="ko-message">KO 💀</div>
     </div>
     <div class="section" id="section2">
         <div class="half">
@@ -131,6 +143,7 @@
         <div class="half">
             <div></div>
         </div>
+        <div id="ko-message2" class="ko-message">KO 💀</div>
     </div>
     <div class="section" id="section3">
         <div class="half">
@@ -140,6 +153,7 @@
         <div class="half">
             <div></div>
         </div>
+        <div id="ko-message3" class="ko-message">KO 💀</div>
     </div>
     <button class="options-button" onclick="openOptions()">⚙️</button>
 
@@ -154,8 +168,8 @@
     <!-- Popup per gestire immagine di sfondo -->
     <div id="image-popup" class="popup">
         <p>Opzioni di Background</p>
-        <input type="text" id="cardName" placeholder="Inserisci il nome della carta">
-        
+        <input type="text" id="cardName" placeholder="Inserisci il nome della carta" list="cardSuggestions">
+        <datalist id="cardSuggestions"></datalist>
         <div>
             <button onclick="selectSection(0)">Sezione 1</button>
             <button onclick="selectSection(1)">Sezione 2</button>
@@ -183,12 +197,7 @@
 
     // Funzione per generare un colore casuale in formato esadecimale
     function getRandomColor() {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
+        const letters = 'black';
     }
 
     // Funzione per assegnare un colore casuale a ciascuna sezione
@@ -231,6 +240,37 @@
         document.getElementById("counter-popup").style.display = "none";
     }
 
+    function fetchCardSuggestions(query) {
+    const datalist = document.getElementById('cardSuggestions');
+    datalist.innerHTML = '';  // Svuota i suggerimenti precedenti
+
+    if (query.length < 3) {  // Evita chiamate se la lunghezza della query è inferiore a 3
+        return;
+    }
+
+    // Chiediamo i suggerimenti tramite l'API di Scryfall
+    fetch(`https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.data && data.data.length > 0) {
+                data.data.forEach(card => {
+                    const option = document.createElement('option');
+                    option.value = card;  // Ogni carta suggerita
+                    datalist.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Errore nella ricerca delle carte:', error);
+        });
+        }
+
+        // Aggiungi un event listener per l'input della cardName
+        document.getElementById('cardName').addEventListener('input', (event) => {
+            const query = event.target.value;
+            fetchCardSuggestions(query);
+        });
+
     // Funzione per impostare l'immagine come sfondo
     function setCardImage() {
         if (selectedSectionIndex === -1) {
@@ -271,23 +311,43 @@
     }
 
     // Funzione per settare i contatori
+   // Funzione per settare i contatori
     function setCounters() {
         let newValue = parseInt(document.getElementById("setNumber").value);
         if (!isNaN(newValue)) {
             for (let i = 0; i < counters.length; i++) {
                 counters[i] = newValue;
                 document.getElementById(`counter${i}`).innerText = counters[i];
+                checkCounter(i);  // Verifica se il contatore è zero
             }
         }
     }
 
-    // Impostiamo i colori casuali al caricamento della pagina
-    window.onload = setRandomSectionColors;
+    // Funzione per verificare il contatore
+    function checkCounter(index) {
+        const counterElement = document.getElementById(`counter${index}`);
+        const section = document.getElementById(`section${index}`);
+        const koMessage = document.getElementById(`ko-message${index}`);
+
+        if (counters[index] === 0) {
+            section.style.pointerEvents = 'none'; // Disabilita l'interazione con la sezione
+            section.style.backgroundImage = '';  // Rimuove l'immagine di sfondo
+            koMessage.style.display = 'block';   // Mostra il messaggio KO
+            counterElement.style.display = 'none'; // Nasconde il contatore quando è 0
+        } else {
+            section.style.pointerEvents = 'auto'; // Rende di nuovo interattiva la sezione
+            koMessage.style.display = 'none';    // Nasconde il messaggio KO
+            counterElement.style.display = 'block'; // Mostra il contatore
+            counterElement.innerText = counters[index]; // Rimuove il valore 0 quando il contatore non è 0
+        }
+    }
 
     // Aggiungi gli eventi per ogni sezione
     const sections = document.querySelectorAll('.section');
     sections.forEach((section, index) => {
         section.addEventListener('click', (event) => {
+            if (counters[index] === 0) return; // Non permette il click se il contatore è 0
+
             const counterElement = document.getElementById(`counter${index}`);
             const currentValue = counters[index];
             const rect = section.getBoundingClientRect();
@@ -299,6 +359,7 @@
                 counters[index] = currentValue + 1;
             }
             counterElement.innerText = counters[index];
+            checkCounter(index);  // Verifica se il contatore è zero
         });
     });
 </script>
