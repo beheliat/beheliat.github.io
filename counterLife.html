@@ -27,7 +27,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: white;
             padding: 20px;
             border: 1px solid #ddd;
             font-size: 36px;
@@ -124,6 +123,24 @@
         let counters = [0, 0, 0, 0];
         let holdInterval;
         
+        // Funzione per generare un colore casuale in formato esadecimale
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+        
+        // Funzione per assegnare un colore casuale a ciascuna sezione
+        function setRandomSectionColors() {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.style.backgroundColor = getRandomColor();
+            });
+        }
+        
         function startHold(index, event) {
             updateCounter(index, event);
             holdInterval = setInterval(() => updateCounter(index, event), 200);
@@ -163,6 +180,9 @@
                 }
             }
         }
+
+        // Impostiamo i colori casuali al caricamento della pagina
+        window.onload = setRandomSectionColors;
     </script>
 </body>
 </html>
