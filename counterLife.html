@@ -111,6 +111,22 @@
             transform: translate(-50%, -50%);
             display: none;
         }
+     .point-change {
+        position: absolute;
+        top: 35%; /* Posizionato più in alto rispetto al contatore */
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 28px; /* Ridotto del 20% rispetto al contatore */
+        font-weight: bold;
+        color: white;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 8px;
+        border-radius: 5px;
+        z-index: 10;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  }
     </style>
 </head>
 <body>
@@ -168,7 +184,13 @@
     <!-- Popup per gestire immagine di sfondo -->
     <div id="image-popup" class="popup">
         <p>Opzioni di Background</p>
-        <input type="text" id="cardName" placeholder="Inserisci il nome della carta" list="cardSuggestions">
+        <input type="text" id="cardName" placeholder="Inserisci il nome della carta"> 
+        <div>
+        <ul id="cardSuggestionsContainer" style="list-style-type: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; border: 1px solid #ddd;">
+            <!-- I suggerimenti con le immagini delle carte verranno inseriti qui -->
+        </ul>
+    </div>
+</ul>
         <datalist id="cardSuggestions"></datalist>
         <div>
             <button onclick="selectSection(0)">Sezione 1</button>
@@ -192,7 +214,7 @@
 </div>
 
 <script>
-    let counters = [0, 0, 0, 0];
+    let counters = [40, 40, 40, 40];
     let selectedSectionIndex = -1; // Inizialmente nessuna sezione è selezionata
 
     // Funzione per generare un colore casuale in formato esadecimale
@@ -239,10 +261,43 @@
     function closeCounterPopup() {
         document.getElementById("counter-popup").style.display = "none";
     }
+    function fetchCardArts(cardName) {
+    fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(cardName)}`)
+        .then(response => response.json())
+        .then(cardData => {
+            if (cardData.object === 'error') {
+                alert('Carta non trovata. Riprova.');
+                return;
+            }
+            // Estrai tutte le immagini dalla carta, considerando che potrebbe avere più facce (cards with faces)
 
-    function fetchCardSuggestions(query) {
-    const datalist = document.getElementById('cardSuggestions');
-    datalist.innerHTML = '';  // Svuota i suggerimenti precedenti
+            const suggestionsContainer = document.getElementById('cardSuggestionsContainer');
+            suggestionsContainer.innerHTML = ''; // Svuota la lista dei suggerimenti
+            
+            const suggestionItem = document.createElement('li');
+            suggestionItem.className = 'suggestion-item';
+
+                // Crea l'immagine e aggiungi la sua URL
+                const img = document.createElement('img');
+                img.src = cardData.image_uris.art_crop;
+                img.alt = cardName;
+                img.style.width = '50px'; // Imposta la larghezza fissa per l'immagine
+                img.style.height = 'auto';
+                img.style.marginRight = '10px'; // Distanza tra l'immagine e il nome
+
+                suggestionItem.appendChild(img);
+                suggestionsContainer.appendChild(suggestionItem);
+     
+        })
+        .catch(error => {
+            console.error('Errore nel recupero delle immagini per le edizioni della carta:', error);
+        });
+}
+
+
+   function fetchCardSuggestions(query) {
+    const suggestionsContainer = document.getElementById('cardSuggestionsContainer');
+    suggestionsContainer.innerHTML = ''; // Svuota i suggerimenti precedenti
 
     if (query.length < 3) {  // Evita chiamate se la lunghezza della query è inferiore a 3
         return;
@@ -254,22 +309,50 @@
         .then(data => {
             if (data.data && data.data.length > 0) {
                 data.data.forEach(card => {
-                    const option = document.createElement('option');
-                    option.value = card;  // Ogni carta suggerita
-                    datalist.appendChild(option);
+                    // Creiamo un nuovo elemento <li> per ogni suggerimento
+                    const suggestionItem = document.createElement('li');
+                    suggestionItem.className = 'suggestion-item';
+                    suggestionItem.textContent = card;
+
+                    fetchCardArts(card);
+                    // Quando l'utente seleziona un suggerimento, recuperiamo tutte le immagini (arts)
+                  /*  suggestionItem.addEventListener('click', () => {
+                       
+                    });*/
+
+                    // Aggiungi il suggerimento alla lista
+                    suggestionsContainer.appendChild(suggestionItem);
                 });
             }
         })
         .catch(error => {
             console.error('Errore nella ricerca delle carte:', error);
         });
-        }
+}
 
-        // Aggiungi un event listener per l'input della cardName
-        document.getElementById('cardName').addEventListener('input', (event) => {
-            const query = event.target.value;
-            fetchCardSuggestions(query);
-        });
+// Aggiungi un event listener per l'input del nome della carta
+document.getElementById('cardName').addEventListener('input', (event) => {
+    const query = event.target.value;
+    fetchCardSuggestions(query);
+});
+
+// Aggiungi un event listener per l'input del nome della carta
+document.getElementById('cardName').addEventListener('input', (event) => {
+    const query = event.target.value;
+    fetchCardSuggestions(query);
+});
+
+    // Aggiungi un event listener per l'input della cardName
+    document.getElementById('cardName').addEventListener('input', (event) => {
+        const query = event.target.value;
+        fetchCardSuggestions(query);
+    });
+
+    // Aggiungi un event listener per l'input della cardName
+    document.getElementById('cardName').addEventListener('input', (event) => {
+        const query = event.target.value;
+        fetchCardSuggestions(query);
+    });
 
     // Funzione per impostare l'immagine come sfondo
     function setCardImage() {
@@ -323,6 +406,12 @@
         }
     }
 
+    window.onload = function() {
+    for (let i = 0; i < counters.length; i++) {
+        document.getElementById(`counter${i}`).innerText = counters[i];
+    }
+}
+
     // Funzione per verificare il contatore
     function checkCounter(index) {
         const counterElement = document.getElementById(`counter${index}`);
@@ -341,27 +430,66 @@
             counterElement.innerText = counters[index]; // Rimuove il valore 0 quando il contatore non è 0
         }
     }
-
+    let lastPressTime = 0;
+    let pendingChanges = [0, 0, 0, 0]; // Store pending changes for each section
+    let pointChangeTimeouts = [null, null, null, null];
     // Aggiungi gli eventi per ogni sezione
-    const sections = document.querySelectorAll('.section');
-    sections.forEach((section, index) => {
-        section.addEventListener('click', (event) => {
-            if (counters[index] === 0) return; // Non permette il click se il contatore è 0
 
-            const counterElement = document.getElementById(`counter${index}`);
-            const currentValue = counters[index];
-            const rect = section.getBoundingClientRect();
-            const clickX = event.clientX;
+  function showPointChangeAnimation(index, change) {
+    const section = document.getElementById(`section${index}`);
+    let pointChange = section.querySelector('.point-change');
 
-            if (clickX < rect.left + rect.width / 2) {
-                counters[index] = currentValue - 1;
-            } else {
-                counters[index] = currentValue + 1;
-            }
-            counterElement.innerText = counters[index];
-            checkCounter(index);  // Verifica se il contatore è zero
-        });
+    if (!pointChange) {
+        pointChange = document.createElement('div');
+        pointChange.className = 'point-change';
+        section.appendChild(pointChange);
+    }
+
+    pointChange.textContent = (change > 0 ? '+' : '') + change;
+    pointChange.style.position = 'absolute';
+    pointChange.style.top = '70%'; // Più in alto
+    pointChange.style.left = '50%'; // Più a destra
+    pointChange.style.transform = 'translate(-50%, -50%) scale(0.5)'; // Più piccolo
+    pointChange.style.fontSize = '20px'; // Ridotto del 50%
+    pointChange.style.opacity = 1;
+    pointChange.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+    clearTimeout(pointChangeTimeouts[index]);
+    pointChangeTimeouts[index] = setTimeout(() => {
+        pointChange.style.opacity = 0;
+        setTimeout(() => {
+            pointChange.remove();
+        }, 300);
+    }, 1000);
+}
+   
+ document.querySelectorAll('.section').forEach((section, index) => {
+    section.addEventListener('click', (event) => {
+        if (counters[index] === 0) return;
+
+        const counterElement = document.getElementById(`counter${index}`);
+        const rect = section.getBoundingClientRect();
+        const clickX = event.clientX;
+
+        let change = (clickX < rect.left + rect.width / 2) ? -1 : 1;
+
+        // Accumula i cambiamenti
+        if (Date.now() - lastPressTime < 500) {
+            pendingChanges[index] += change;
+        } else {
+            pendingChanges[index] = change;
+        }
+
+        counters[index] += change;
+        counterElement.innerText = counters[index];
+        checkCounter(index);
+
+        // Mostra l'animazione con il valore corretto
+        showPointChangeAnimation(index, pendingChanges[index]);
+
+        lastPressTime = Date.now();
     });
+});
 </script>
 </body>
 </html>
